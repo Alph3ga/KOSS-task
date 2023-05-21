@@ -81,9 +81,10 @@ Here, to create the Image, Docker
 1. Downloads an pre-built Image called '*golang:1.20-alpine*'
 2. Sets the working directory to '/src'
 3. Copies '. .' *(the directory containing the parent directory of the dockerfile)* to the working directory in the Image *(/src)*
-4. Runs the command  `go build -o /bin/client ./cmd/client`
-5. Runs the command  `go build -o /bin/server ./cmd/server`
-6. Sets the command to start the executable 
+4. Runs the command `go mod download`
+5. Runs the command  `go build -o /bin/client ./cmd/client`
+6. Runs the command  `go build -o /bin/server ./cmd/server`
+7. Sets the command to start the executable 
 
 The details of what exactly those commands do are not in the scope of this course *(refer to additional material at the end)*, what is important to understand here is how Docker builds an image step by step ( layer by layer ).
 

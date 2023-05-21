@@ -57,7 +57,9 @@ Cue hours and hours of trying to find out what went wrong.
 Solution? While you are creating your software, just tell Docker how exactly to set things up. 
 
 Now whenever and wherever you want to set up your project, you can do so in a fraction of the time it would have taken previously. You can deploy this container anywhere *(that has Docker installed)*, and it will work exactly the same everywhere.
-<br><br>
+
+To your process, it's running on the exact same computer each and every time.
+
 
 ---
 <br>
@@ -172,8 +174,6 @@ There are different types of namespaces, to be briefly covered here. For more in
 
 **User Namespace :** Allows you to map any user inside the namespace to any actual user. This implies that within a user namespace, a process can have root control over all the processes inside it, but not outside. This allows processes to have root control over specific parts of the system, rather than the whole system.
 
-<br>
-
 ---
 
 <br>
@@ -193,6 +193,23 @@ Another thing to note is the concept of read-only containers. Oftentimes, proces
 Docker is simply one of the tools made to automate the process of setting up these containers.
 
 ---
+
+<br>
+
+## The Docker Ecosystem :
+
+Docker itself is a high level abstraction for running containers. Internally, it uses several other tools to actually access and manage the low level kernel features like cgroups and namespaces, and manage the creation of containers.
+
+The `dockerd` sends this task to a program (daemon) called `containerd` (container daemon). The `containerd` program is a lower level container runtime that manages the lifecycle of a container, adding features like image distribution, setting up networks, etc.
+
+Even `containerd` doesn't actually create and start a container, that is the job of the lowest level runtime `runc` to do that. `runc` contains `libcontainer`, a Go library for creating tools. It starts the container process and then exits.
+
+Since `runc` exits, some program needs to manage the container. For this, `containerd-shim` is the daemon process that launches `runc`, which launches the container process. When `runc` exits, `containerd-shim` becomes the parent process of the container. 
+
+What this allows is the redirection of the standard input output streams (`stdin`, `stdout`, `stderr`) according to our needs. It also allows `containerd-shim`, as the parent process, to know the exit code of the container process, and pass it on to `dockerd`.
+
+---
 ## Additional references :
 - [Dockerfile syntax reference](https://docs.docker.com/engine/reference/builder/)
 - [Overview of common Namespaces](https://www.redhat.com/sysadmin/7-linux-namespaces)
+- [Overview of Docker container runtimes](https://faun.pub/docker-containerd-standalone-runtimes-heres-what-you-should-know-b834ef155426)

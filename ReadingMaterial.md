@@ -202,7 +202,7 @@ Docker itself is a high level abstraction for running containers. Internally, it
 
 The `dockerd` sends this task to a program (daemon) called `containerd` (container daemon). The `containerd` program is a lower level container runtime that manages the lifecycle of a container, adding features like image distribution, setting up networks, etc.
 
-Even `containerd` doesn't actually create and start a container, that is the job of the lowest level runtime `runc` to do that. `runc` contains `libcontainer`, a Go library for creating tools. It starts the container process and then exits.
+Even `containerd` doesn't actually create and start a container, that is the job of the lowest level runtime `runc` to do that. `runc` contains `libcontainer`, a Go library for creating containers. It starts the container process and then exits.
 
 Since `runc` exits, some program needs to manage the container. For this, `containerd-shim` is the daemon process that launches `runc`, which launches the container process. When `runc` exits, `containerd-shim` becomes the parent process of the container. 
 

@@ -14,7 +14,7 @@ Docker is a platform ( more specifically, a set of Platform as a Service product
 
 ### **What is a container?** 
 
-Simply put, it is a container ( as the name suggests ), that provides everything your software needs to run. This isolates your software's behaviour from the rest of the system it is installed on.
+Simply put, it is a container ( as the name suggests ), that packages and provides everything your software needs to run. This isolates your software's behaviour from the rest of the system it is installed on.
 
 ### **What is OS level virtualization?**
 
@@ -109,6 +109,89 @@ When you run a command like `docker build` or `docker run`, you communicate with
 
 
 ---
+<br>
+
+## Relevant Features of the Linux Kernel :
+
+Docker leverages several features that exist in the Linux Kernel to create containers. Two features that you need to understand to understand how the core features of Docker work, are namespaces and Cgroups.
+
+### **Process :**
+
+Firstly, what is a 'process'? A process is essentially an instance of the program, being run by the processor. It is a set of instructions, that the processor is following.
+
+So how does a computer with say 8 processing units, simultaneously run hundreds of processes? By not actually running them simultaneously. 
+
+A program in the Operating System, pauses runs a bit of one process, pauses it, runs a bit of another, pauses, and so on. This switching happens so fast and so many times per second, to us, it basically seems like all the processes are running simulaneously. All such processes have a process ID, or a `PID`. 
+
+The Operating System decides how much processing time, or memory to give to each process. Intuitively, there is a problem in this system. Any process can demand more CPU resources, or start more child processes. Since resources are limited on any system, this affects other processes running on the system. 
+
+To tackle this problem, Cgroups (Control Groups) are used.
+
+
+`PID 1` is a special process `init`, that manages all other processes below it. Essentially, all processes exist in an heirachy, and have their own IDs. Any process can ask the Operating System for the list of processes running, or the network sockets, or the file system, and get the same information. They can also ask to communicate with any other process via protocols set by the Operating System. This creates a problem, especially for malicious programs.
+
+To tackle this problem, Namespaces are used.
+
+Another thing to address is how processes access memory. It would be near impossible (and insecure) for programmers to manually manage what memory belongs to them, and what memory belongs to other processes. So it is clearly a programming nightmare and a security hazard to let processes use actual physical memory addresses on the primary memory. 
+
+Instead, processes use virtual memory addresses, which then the Operating System and the CPU map to the actual physical memory. Virtual memory addresses are contiguous, but the physical memory they are mapped to, doesn't have to be- the physical memory location doesn't even always have to exist on the primary memory.
+
+This way, processes can only see their own memory, and believe they have that entire contiguous space available on the system.
+
+<br>
+
+### **CGroup :**
+
+Control Groups are basically a way to **group** processes to **control** the resources they can access. Each control group has an associated controller, to control or limit the resources the processes within the group can access. 
+
+This means that now processes can't take more memory than allotted to them and bring the entire system to a halt. I can group all processes of a type together in a control group, assign it 25% of the memory and 2 of the CPU cores, and now even if all those processes (within the group) come to a halt because one of them took too many resources, no other process is affected on the system.
+
+A process can still know that it is in a control group, and see every other process on the system outside the cgroup, but if it isn't a root authorized process, it cannot do anything about it. 
+
+<br>
+
+### **Namespace :**
+
+Namespaces are basically a way to lie to processes about the System and the environment they are running in. It is a way to segment and isolate groups of processes. 
+One thing to note is that any child process will by default be in the same namespace as the parent process, unless explicitly moved to another namespace. No process can avail information restricted by its namespace.
+
+Namespaces allow you to refer to different resources with the same name, the same resource with different names, and even not allow the process to refer to a resource at all (by not having a name in the namespace). Do can do this differently for all processes, making them feel they are in completely different systems.
+
+There are different types of namespaces, to be briefly covered here. For more info, see the references at the bottom. 
+
+**UTS Namespace :** Change the hostname of the system
+
+**Mount Namespace :** Allows the processes within the namespace to view a selected part of the filesystem as if it were the entire filesystem. To it, the mounted part of the filesystem is everything that exists on the system.
+
+**IPC Namespace :** Inter Process Communication namespaces restrict how processes communicate with each other.
+
+**PID Namespace :** Seperates what processes a given process can see. Every PID namespace gives processes their own PID, starting with `PID 1`.
+
+**Net Namespace :** Restricts what network resources (ports, IP address) can be accessed and used. Linux doesn't support putting physical network resources in any other namespace than the root namespace, so all communication is routed via virtual ports. To a process, there is no difference between a virtual and physical port.
+
+**User Namespace :** Allows you to map any user inside the namespace to any actual user. This implies that within a user namespace, a process can have root control over all the processes inside it, but not outside. This allows processes to have root control over specific parts of the system, rather than the whole system.
+
+<br>
+
+---
+
+<br>
+
+## How does all this lead to a container?
+
+Linux allows various overlapping combinations of Namespaces and Cgroups, but often having a varied combination can be messy and hard to manage. A common configuration is using all the namespaces and a cgroup, i.e., complete isolation from the system.
+
+This configuration of using all the namespaces and a cgroup, is called a *container*. 
+
+Each container has its own user structure, mounted filesystem, process IDs, virtual ports (mapped to other ports, physical or virtual), etc.
+
+To a process(es) running inside this container, it is running on its own computer. It can use ports to connect to other containers, as if using physical ports to connect to another computer.
+
+Another thing to note is the concept of read-only containers. Oftentimes, processes do not need to write to secondary memory. This allows us to bind (mount) the same filesystem containing the resources to even hundreds of different containers made using the same image. This makes containers extremely lightweight, and setting them up very fast. 
+
+Docker is simply one of the tools made to automate the process of setting up these containers.
+
+---
 ## Additional references :
 - [Dockerfile syntax reference](https://docs.docker.com/engine/reference/builder/)
-
+- [Overview of common Namespaces](https://www.redhat.com/sysadmin/7-linux-namespaces)

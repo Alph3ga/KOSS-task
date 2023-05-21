@@ -8,7 +8,6 @@ This is the repository for storing and presenting the teaching materials created
 
 - Presentation for Teaching
 - Markdown file containing additional information
-- PDF copy of said markdown file 
 <br><br>
 
 ---
